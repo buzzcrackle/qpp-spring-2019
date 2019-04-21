@@ -1,8 +1,8 @@
 // pins a4-7 for the motor control
-int mc1 = A4
-int mc2 = A5
-int mc3 = A6
-int mc4 = A7
+int mc1 = A4;
+int mc2 = A5;
+int mc3 = A6;
+int mc4 = A7;
 void setup() {
   // put your setup code here, to run once:
   pinMode(mc1, OUTPUT);
@@ -18,21 +18,25 @@ void loop() {
   for (i = 0; i < 256; i++) {
     digitalWrite(mc1, i);
     digitalWrite(mc3, i);
+    Serial.print(i);
     delay(100);
   }
   for (i = i; i >= 0; i--) {
     digitalWrite(mc1, i);
     digitalWrite(mc3, i);
+    Serial.print(i);
     delay(100);
   }
   for (i = 0; i < 256; i++) {
     digitalWrite(mc2, i);
     digitalWrite(mc4, i);
+    Serial.print(i);
     delay(100);
   }
   for (i = i; i >= 0; i--) {
     digitalWrite(mc2, i);
     digitalWrite(mc4, i);
+    Serial.print(i);
     delay(100);
   }
 }
