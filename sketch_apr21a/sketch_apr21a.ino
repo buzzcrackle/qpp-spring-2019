@@ -18,17 +18,21 @@ void loop() {
   for (i = 0; i < 256; i++) {
     digitalWrite(mc1, i);
     digitalWrite(mc3, i);
+    delay(100);
   }
   for (i = i; i >= 0; i--) {
     digitalWrite(mc1, i);
     digitalWrite(mc3, i);
+    delay(100);
   }
   for (i = 0; i < 256; i++) {
     digitalWrite(mc2, i);
     digitalWrite(mc4, i);
+    delay(100);
   }
   for (i = i; i >= 0; i--) {
     digitalWrite(mc2, i);
     digitalWrite(mc4, i);
+    delay(100);
   }
 }
