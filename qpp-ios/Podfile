@@ -1,0 +1,6 @@
+platform :ios, '12.3'
+use_frameworks!
+
+target 'qpp-ios' do
+  pod 'Alamofire', '~> 4.0'
+end
