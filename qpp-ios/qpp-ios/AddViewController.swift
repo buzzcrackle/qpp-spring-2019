@@ -1,5 +1,5 @@
 //
-//  ViewController.swift
+//  AddViewController.swift
 //  qpp-ios
 //
 //  Created by Jesse Liang on 5/17/19.
@@ -13,9 +13,10 @@ import CoreGraphics
 let DIRECTIONS = ["Up", "Down", "Left", "Right"]
 let SERVER_URL = "http://35.231.1.207:3000"
 
-class ViewController: UIViewController {
+class AddViewController: UIViewController {
     
     @IBOutlet weak var label: UILabel!
+    @IBOutlet weak var errorLabel: UILabel!
     @IBOutlet weak var pathView: PathView!
     
     let defaults = UserDefaults.standard
@@ -24,15 +25,23 @@ class ViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        directionsList.removeAll()
-        
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(true)
+        let currName = defaults.string(forKey: "currentName")
+        if (currName != "") {
+            directionsList = defaults.array(forKey: currName!) as! [Int]
+        } else {
+            directionsList.removeAll()
+        }
+        updateDirections()
     }
     
     func updateDirections() {
         var text = ""
         
         pathView.drawPoints(directions: directionsList)
-
         
         if (directionsList.count == 0) {
             label.text = text
@@ -94,7 +103,37 @@ class ViewController: UIViewController {
     }
     
     @IBAction func doneButton(_ sender: Any) {
-        getPathName(message: "Enter name of path")
+        if (defaults.bool(forKey: "isEditting")) {
+            let name = defaults.string(forKey: "currentName")
+            let headers: HTTPHeaders = [
+                "Content-Type" : "application/json",
+                "Accept": "application/json"
+            ]
+            let params: Parameters = [
+                "name": name!,
+                "path": self.directionsList
+            ]
+            Alamofire.request(SERVER_URL + "/add-path", method: .post, parameters: params, encoding: JSONEncoding.default, headers: headers).responseString { response in
+                
+                let statusCode = response.response?.statusCode
+                if statusCode != 200 {
+                    self.errorLabel.text = "Network error, try again later"
+                    self.errorLabel.textColor = UIColor.red
+                } else {
+                    self.defaults.set(self.directionsList, forKey: name!)
+                    self.defaults.set(false, forKey: "isEditting")
+                    self.directionsList.removeAll()
+                    self.dismiss(animated: true, completion: nil)
+                }
+                
+            }
+        } else {
+            getPathName(message: "Enter name for path")
+        }
+    }
+    
+    @IBAction func cancelButton(_ sender: Any) {
+        self.dismiss(animated: true, completion: nil)
     }
     
     func getPathName(message: String) {
@@ -122,8 +161,21 @@ class ViewController: UIViewController {
                     "name": textField!.text!,
                     "path": self.directionsList
                 ]
-                Alamofire.request(SERVER_URL + "/add-path", method: .post, parameters: params, encoding: JSONEncoding.default, headers: headers).response { response in // method defaults to `.get`
-                    debugPrint(response)
+                Alamofire.request(SERVER_URL + "/add-path", method: .post, parameters: params, encoding: JSONEncoding.default, headers: headers).responseString { response in
+                    
+                    let statusCode = response.response?.statusCode
+                    if statusCode != 200 {
+                        self.errorLabel.text = "Network error, try again later"
+                        self.errorLabel.textColor = UIColor.red
+                    } else {
+                        self.defaults.set(self.directionsList, forKey: textField!.text!)
+                        var paths = self.defaults.array(forKey: "paths") as! [String]
+                        paths.append(textField!.text!)
+                        self.defaults.set(paths, forKey: "paths")
+                        self.defaults.set(false, forKey: "isEditting")
+                        self.directionsList.removeAll()
+                        self.dismiss(animated: true, completion: nil)
+                    }
                     
                 }
             }
