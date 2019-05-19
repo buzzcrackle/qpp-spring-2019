@@ -50,15 +50,15 @@ app.post('/bot-instructions', function (req, res) {
 app.get('/get-all', function (req, res) {
 	console.log("get-all");
 	mongo.connect(url, (err, client) => {
-			if (err) {
-				console.error(err);
-				return;
-			}
-			const db = client.db('qpp');
-			const collection = db.collection('paths');
+		if (err) {
+			console.error(err);
+			return;
+		}
+		const db = client.db('qpp');
+		const collection = db.collection('paths');
 		collection.find({}).toArray((err, arr) => {
 			if (err) throw err;
-			res.json({paths: allPaths});
+			res.json({paths: arr});
 			res.end();
 		});
 		client.close();
