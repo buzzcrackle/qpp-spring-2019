@@ -113,7 +113,7 @@ class AddViewController: UIViewController {
                 "name": name!,
                 "path": self.directionsList
             ]
-            Alamofire.request(SERVER_URL + "/add-path", method: .post, parameters: params, encoding: JSONEncoding.default, headers: headers).responseString { response in
+            Alamofire.request(SERVER_URL + "/edit-path", method: .post, parameters: params, encoding: JSONEncoding.default, headers: headers).responseString { response in
                 
                 let statusCode = response.response?.statusCode
                 if statusCode != 200 {

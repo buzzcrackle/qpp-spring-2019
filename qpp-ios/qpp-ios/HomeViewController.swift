@@ -14,8 +14,10 @@ class HomeViewController: UIViewController, UIPickerViewDataSource, UIPickerView
     
     @IBOutlet weak var pickerView: UIPickerView!
     @IBOutlet weak var mapVIew: MapView!
+    @IBOutlet weak var messageLabel: UILabel!
     
     let defaults = UserDefaults.standard
+    var timer: Timer?
     
     var currentPath = [Int()]
     var currentName = ""
@@ -23,6 +25,27 @@ class HomeViewController: UIViewController, UIPickerViewDataSource, UIPickerView
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        Alamofire.request(SERVER_URL + "/get-all", method: .get).responseJSON { response in
+            let statusCode = response.response?.statusCode
+            if statusCode != 200 {
+                self.messageLabel.text = "Network error try again later"
+                self.messageLabel.textColor = UIColor.red
+            } else {
+                if let result = response.result.value as? [String: Any] {
+                    let paths = result["paths"] as! [[String: Any]]
+                    var array : [String] = []
+                    for i in 0..<paths.count {
+                        let path = paths[i]
+                        let pathName = path["name"] as! String
+                        let pathArray = path["path"] as! [Int]
+                        array.append(pathName)
+                        self.defaults.set(pathArray, forKey: pathName)
+                    }
+                    self.defaults.set(array, forKey: "paths")
+                }
+            }
+        }
         
         defaults.set(false, forKey: "isEditting")
         
@@ -47,6 +70,7 @@ class HomeViewController: UIViewController, UIPickerViewDataSource, UIPickerView
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(true)
+        messageLabel.text = ""
         if (defaults.array(forKey: "paths") == nil) {
             var array = [String()]
             array.removeAll()
@@ -63,7 +87,7 @@ class HomeViewController: UIViewController, UIPickerViewDataSource, UIPickerView
     }
     
     @IBAction func editButton(_ sender: Any) {
-        if (currentName != "") {
+    if (currentName != "") {
             defaults.set(true, forKey: "isEditting")
             defaults.set(currentName, forKey: "currentName")
             performSegue(withIdentifier: "addModal", sender: self)
@@ -77,10 +101,68 @@ class HomeViewController: UIViewController, UIPickerViewDataSource, UIPickerView
     }
     
     @IBAction func deliverButton(_ sender: Any) {
-        pathNames = defaults.array(forKey: "paths") as! [String]
-        print(pathNames)
-        pickerView.reloadAllComponents()
         
+        Alamofire.request(SERVER_URL + "/bot-free", method: .get).responseJSON { response in
+            let statusCode = response.response?.statusCode
+            if statusCode != 200 {
+                self.messageLabel.text = "Network error try again later"
+                self.messageLabel.textColor = UIColor.red
+            } else {
+                if let result = response.result.value as? [String: Any] {
+                    if (result["free"] as! Bool == false) {
+                        self.messageLabel.textColor = UIColor.black
+                        self.messageLabel.text = "Robot currently unavailable, try again later"
+                    } else {
+                        self.startDelivery()
+                    }
+                }
+            }
+        }
+        
+    }
+    
+    func startDelivery() {
+        let currPath = defaults.array(forKey: currentName) as! [Int]
+        let headers: HTTPHeaders = [
+            "Content-Type" : "application/json",
+            "Accept": "application/json"
+        ]
+        let params: Parameters = [
+            "name": currentName,
+            "path": currPath
+        ]
+        Alamofire.request(SERVER_URL + "/bot-instructions", method: .post, parameters: params, encoding: JSONEncoding.default, headers: headers).responseString { response in
+            
+            let statusCode = response.response?.statusCode
+            if statusCode != 200 {
+                self.messageLabel.textColor = UIColor.red
+                self.messageLabel.text = "Network error, try again later"
+            } else {
+                self.messageLabel.textColor = UIColor.black
+                self.messageLabel.text = "Success, robot in delivery"
+                self.timer = Timer.scheduledTimer(timeInterval: 5, target: self, selector: #selector(self.checkStatus), userInfo: nil, repeats: true)
+                
+            }
+            
+        }
+    }
+    
+    @objc func checkStatus() {
+        Alamofire.request(SERVER_URL + "/bot-free", method: .get).responseJSON { response in
+            let statusCode = response.response?.statusCode
+            if statusCode != 200 {
+                self.messageLabel.text = "Network error try again later"
+                self.messageLabel.textColor = UIColor.red
+            } else {
+                if let result = response.result.value as? [String: Any] {
+                    if (result["free"] as! Bool == true) {
+                        self.timer?.invalidate()
+                        self.messageLabel.textColor = UIColor.black
+                        self.messageLabel.text = "Delivery made, robot available"
+                    }
+                }
+            }
+        }
     }
     
     func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
