@@ -27,6 +27,10 @@ class HomeViewController: UIViewController, UIPickerViewDataSource, UIPickerView
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        let domain = Bundle.main.bundleIdentifier!
+        UserDefaults.standard.removePersistentDomain(forName: domain)
+        UserDefaults.standard.synchronize()
+        
         // CHecks for all paths that were already created
         Alamofire.request(SERVER_URL + "/get-all", method: .get).responseJSON { response in
             let statusCode = response.response?.statusCode
