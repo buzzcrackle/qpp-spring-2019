@@ -27,6 +27,7 @@ class AddViewController: UIViewController {
         super.viewDidLoad()
     }
     
+    // Updates view whenvever the page appears
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(true)
         let currName = defaults.string(forKey: "currentName")
@@ -38,6 +39,7 @@ class AddViewController: UIViewController {
         updateDirections()
     }
     
+    // Updates the map
     func updateDirections() {
         var text = ""
         
@@ -102,6 +104,7 @@ class AddViewController: UIViewController {
         updateDirections()
     }
     
+    // Processes newly added path. Sends added/editted path to server and makes sure it was sucessfully added.
     @IBAction func doneButton(_ sender: Any) {
         if (defaults.bool(forKey: "isEditting")) {
             let name = defaults.string(forKey: "currentName")
@@ -113,6 +116,7 @@ class AddViewController: UIViewController {
                 "name": name!,
                 "path": self.directionsList
             ]
+            
             Alamofire.request(SERVER_URL + "/edit-path", method: .post, parameters: params, encoding: JSONEncoding.default, headers: headers).responseString { response in
                 
                 let statusCode = response.response?.statusCode
@@ -136,6 +140,7 @@ class AddViewController: UIViewController {
         self.dismiss(animated: true, completion: nil)
     }
     
+    // Asks the user for the path name and finally sends the path to server
     func getPathName(message: String) {
         //1. Create the alert controller.
         let alert = UIAlertController(title: "New Path", message: message, preferredStyle: .alert)
@@ -187,6 +192,7 @@ class AddViewController: UIViewController {
     
 }
 
+// UIView for the map. Honestly really messy, but it works.
 class PathView: UIView {
     
     var dirs: [Int] = []

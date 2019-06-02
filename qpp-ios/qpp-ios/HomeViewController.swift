@@ -23,9 +23,11 @@ class HomeViewController: UIViewController, UIPickerViewDataSource, UIPickerView
     var currentName = ""
     var pathNames = [String()]
     
+    // Runs code whenever this page is first loaded
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        // CHecks for all paths that were already created
         Alamofire.request(SERVER_URL + "/get-all", method: .get).responseJSON { response in
             let statusCode = response.response?.statusCode
             if statusCode != 200 {
@@ -68,6 +70,7 @@ class HomeViewController: UIViewController, UIPickerViewDataSource, UIPickerView
         }
     }
     
+    // Updates view whenever the view appears again
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(true)
         messageLabel.text = ""
@@ -86,6 +89,7 @@ class HomeViewController: UIViewController, UIPickerViewDataSource, UIPickerView
         mapVIew.drawPoints()
     }
     
+    // Sends user to add path page but with the existing path
     @IBAction func editButton(_ sender: Any) {
     if (currentName != "") {
             defaults.set(true, forKey: "isEditting")
@@ -94,34 +98,41 @@ class HomeViewController: UIViewController, UIPickerViewDataSource, UIPickerView
         }
     }
     
+    // Sends user to add path page
     @IBAction func addButton(_ sender: Any) {
         currentName = ""
         defaults.set(currentName, forKey: "currentName")
         performSegue(withIdentifier: "addModal", sender: self)
     }
     
+    // Calls delivery
     @IBAction func deliverButton(_ sender: Any) {
-        
-        Alamofire.request(SERVER_URL + "/bot-free", method: .get).responseJSON { response in
-            let statusCode = response.response?.statusCode
-            if statusCode != 200 {
-                self.messageLabel.text = "Network error try again later"
-                self.messageLabel.textColor = UIColor.red
-            } else {
-                if let result = response.result.value as? [String: Any] {
-                    if (result["free"] as! Bool == false) {
-                        self.messageLabel.textColor = UIColor.black
-                        self.messageLabel.text = "Robot currently unavailable, try again later"
-                    } else {
-                        self.startDelivery()
+        if (currentPath.count == 0) {
+            messageLabel.text = "No path selected"
+            messageLabel.textColor = UIColor.red
+        } else {
+            Alamofire.request(SERVER_URL + "/bot-free", method: .get).responseJSON { response in
+                let statusCode = response.response?.statusCode
+                if statusCode != 200 {
+                    self.messageLabel.textColor = UIColor.red
+                    self.messageLabel.text = "Network error try again later"
+                } else {
+                    if let result = response.result.value as? [String: Any] {
+                        if (result["free"] as! Bool == false) {
+                            self.messageLabel.textColor = UIColor.black
+                            self.messageLabel.text = "Robot currently unavailable, try again later"
+                        } else {
+                            self.startDelivery()
+                        }
                     }
                 }
             }
         }
-        
     }
     
+    // Sends request to server to start deliver for bot
     func startDelivery() {
+        messageLabel.text = ""
         let currPath = defaults.array(forKey: currentName) as! [Int]
         let headers: HTTPHeaders = [
             "Content-Type" : "application/json",
@@ -147,6 +158,7 @@ class HomeViewController: UIViewController, UIPickerViewDataSource, UIPickerView
         }
     }
     
+    // Checks the server to see if there is an update on the delivery
     @objc func checkStatus() {
         Alamofire.request(SERVER_URL + "/bot-free", method: .get).responseJSON { response in
             let statusCode = response.response?.statusCode
@@ -165,27 +177,31 @@ class HomeViewController: UIViewController, UIPickerViewDataSource, UIPickerView
         }
     }
     
+    // Used to create the number of rows for pickerview
     func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
         return pathNames.count
     }
     
+    // Used to determine the number of componenets in pickerview (I'm assuming like a date picker requires 3 components MMDDYY, but we need 1)
     func numberOfComponents(in pickerView: UIPickerView) -> Int {
         return 1
     }
     
+    // Used to determine the strings in each row of the pickerview
     func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
         return pathNames[row]
     }
     
+    // Used to see which pickerview was selected
     func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
         currentName = pathNames[row]
         currentPath = defaults.array(forKey: pathNames[row]) as! [Int]
         defaults.set(currentName, forKey: "currentName")
-        print(currentPath)
         mapVIew.drawPoints()
     }
 }
 
+// UIView for the map This part is really messy, but it basically creates a new "node" and connects it to the previous one as a line
 class MapView: UIView {
     let defaults = UserDefaults.standard
     
