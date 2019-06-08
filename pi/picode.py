@@ -1,9 +1,9 @@
-import busio
-import board
-import adafruit_rfm69
+#import busio
+#import board
+#import adafruit_rfm69
 import requests
 import time
-from digitalio import DigitalInOut, Direction, Pull
+#from digitalio import DigitalInOut, Direction, Pull
 
 url = "http://35.231.1.207:3000/"
 
